@@ -450,7 +450,7 @@ button.disp{cursor:pointer}
  <div class="pv-carrier"><div class="ph-h"><span>본인확인</span></div><div class="ph-t">이용 중인 통신사를<br>선택해 주세요</div><div class="clist"><div class="c1">SKT</div><div>KT</div><div>LG U+</div><div>알뜰폰</div></div></div>
  <div class="pv-form"><div class="ph-h"><span>본인확인</span><em>SKT</em></div><div class="ph-t">내 정보를 입력해 주세요</div>
   <label>이름<b><span id="f1"></span><i class="cur c1"></i></b></label>
-  <label>생년월일 · 성별<b><span id="f2"></span><i class="cur c2"></i><span class="sx">- <u>1</u>●●●●●●</span></b></label>
+  <label>생년월일<b><span id="f2"></span><i class="cur c2"></i><span class="sx" id="f2m"></span></b></label>
   <label>휴대폰 번호<b><span id="f3"></span><i class="cur c3"></i></b></label>
   <div class="agree"><span class="cb"></span>본인확인 서비스 약관 전체 동의</div>
   <div class="go">인증 요청</div></div>
@@ -559,16 +559,18 @@ function go(screen){
 function doGo(screen){
   clearT();st.screen=screen;if(screen!=='issue')phys('p0');st.modal=null;st.err='';
   if(screen==='guests'){st.sel.forEach(id=>{const r=room(id);if(st.guests[id]==null)st.guests[id]=Math.max(1,Math.min(remaining(r)||1,r.max-r.checked))})}
-  if(screen==='auth'){st.lastPct=0;st.authDone=0;st.authLog=[];st.logShown=0;ph('home');st.phRun=false}else ph('off');
+  if(screen==='auth'){st.nameIdx=0;st.lastPct=0;st.authDone=0;st.authLog=[];st.logShown=0;ph('home');st.phRun=false}else ph('off');
   if(screen==='guide'){later(guideAnim,50);later(()=>go('auth'),12500)}
   if(screen==='issue'){st.queue=[...st.sel];st.issueIdx=0;st.lastIssued=[];startIssue()}
   render();
   const sc=stage.querySelector('.scroll,.fin');if(sc)sc.scrollTop=0;
 }
+const myMask=()=>RES.name[0]+'*'+RES.name.slice(-1);
+const other=()=>{const pool=NAMES.filter(x=>x!==myMask());return pool[st.nameIdx++%pool.length]};
 function authTick(){
   const n=authTotal();
   if(st.authDone>=n){clearT();return}
-  st.authDone++;st.authLog.push(NAMES[st.nameIdx++%NAMES.length]);
+  st.authDone++;st.authLog.push(other());
   if(st.authDone>=n)clearT();
   render();
 }
@@ -578,8 +580,8 @@ function phoneCycle(){
   if(st.screen!=='auth'||st.phRun)return;
   st.phRun=true;
   if(st.authDone>=authTotal()){ph('done');return}
-  document.getElementById('pname').textContent=NAMES[st.nameIdx%NAMES.length];
-  ['f1','f2','f3'].forEach(id=>{document.getElementById(id).textContent=''});
+  document.getElementById('pname').textContent=myMask();
+  ['f1','f2','f3','f2m'].forEach(id=>{document.getElementById(id).textContent=''});
   ph('cam');
   later(()=>ph('found'),1500);
   later(()=>ph('carrier'),2400);
@@ -587,20 +589,21 @@ function phoneCycle(){
   later(()=>ph('form'),3800);
   const type=(id,txt,t0,step)=>{[...txt].forEach((ch,i)=>later(()=>{document.getElementById(id).textContent+=ch},t0+i*step))};
   const k=n=>{const p=document.getElementById('phone');p.classList.remove('k1','k2','k3');if(n)p.classList.add('k'+n)};
-  later(()=>k(1),4000);later(()=>k(2),5300);later(()=>k(3),6700);later(()=>k(0),8700);
-  type('f1','김민준',4300,280);
-  type('f2','950124',5500,170);
-  type('f3',RES.full,6900,130);
-  later(()=>document.getElementById('phone').classList.add('agree'),9000);
-  later(()=>document.getElementById('phone').classList.add('press'),9500);
-  later(()=>ph('auth'),9900);
-  later(()=>ph('done'),11300);
+  later(()=>k(1),4000);later(()=>k(2),5300);later(()=>k(3),7500);later(()=>k(0),9400);
+  type('f1',RES.name,4300,280);
+  type('f2','950124 - 1',5500,170);
+  later(()=>{document.getElementById('f2m').textContent='●●●●●●'},5500+10*170+120);
+  type('f3',RES.full,7600,130);
+  later(()=>document.getElementById('phone').classList.add('agree'),9700);
+  later(()=>document.getElementById('phone').classList.add('press'),10200);
+  later(()=>ph('auth'),10600);
+  later(()=>ph('done'),12000);
   later(()=>{
-    if(st.authDone<authTotal()){st.authDone++;st.authLog.push(NAMES[st.nameIdx++%NAMES.length]);render()}
+    if(st.authDone<authTotal()){st.authDone++;st.authLog.push(myMask());render()}
     if(st.authDone>=authTotal())return;
     const next=()=>later(()=>{authTick();if(st.authDone<authTotal())next()},700+Math.random()*2300);
     next();
-  },12000);
+  },12700);
 }
 document.getElementById('phone').addEventListener('click',()=>{if(!busy&&st.screen==='auth'&&!st.phRun)phoneCycle()});
 function phys(c){const k=document.getElementById('kiosk');if(k)k.className=c+(k.classList.contains('ph-on')?' ph-on':'');}
@@ -893,7 +896,7 @@ function act(a,v){
     case 'hasminor':s.modal='minorstaff';break;
     case 'skipguide':return go('auth');
     case 'qrauth':case 'idok':
-      if(s.authDone<authTotal()){s.authDone++;s.authLog.push(NAMES[s.nameIdx++%NAMES.length]);if(s.authDone>=authTotal())clearT()}
+      if(s.authDone<authTotal()){s.authDone++;s.authLog.push(other());if(s.authDone>=authTotal())clearT()}
       s.modal=null;break;
     case 'idauth':s.modal='id';break;
     case 'authnext':{
