@@ -601,7 +601,7 @@ function phoneCycle(){
   later(()=>{
     if(st.authDone<authTotal()){st.authDone++;st.authLog.push(myMask());render()}
     if(st.authDone>=authTotal())return;
-    const next=()=>later(()=>{authTick();if(st.authDone<authTotal())next()},700+Math.random()*2300);
+    const next=()=>later(()=>{authTick();if(st.authDone<authTotal())next()},(Math.random()<.25?250+Math.random()*400:900+Math.random()*3200));
     next();
   },12700);
 }
@@ -854,7 +854,11 @@ function render(){
   view.innerHTML=v.html+modal();
   if(oldSc){const sc=view.querySelector('.scroll,.fin');if(sc)sc.scrollTop=keep}
   const bar=view.querySelector('.bar i[data-w]');
-  if(bar){const w=+bar.dataset.w;st.lastPct=w;requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.width=w+'%'}))}
+  if(bar){const w=+bar.dataset.w,moved=w!==st.lastPct;st.lastPct=w;
+    if(moved){const eases=['cubic-bezier(.3,.7,.4,1)','cubic-bezier(.6,0,.4,1)','cubic-bezier(.15,.9,.3,1)','linear','cubic-bezier(.5,.1,.2,1)'];
+      bar.style.transitionDuration=(0.35+Math.random()*1.5).toFixed(2)+'s';
+      bar.style.transitionTimingFunction=eases[Math.floor(Math.random()*eases.length)];}
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.width=w+'%'}))}
 }
 function updateStepper(){
   const box=document.getElementById('stp');
